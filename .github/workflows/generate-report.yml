@@ -1,1 +1,59 @@
-placeholder - will be overwritten
+name: Generate BCONHUB Report
+
+# Two triggers:
+#   1. schedule  - runs every day so the report never goes stale.
+#   2. push      - runs whenever the template or the generator script changes, so you get a
+#                  fresh report reflecting the new design/logic right away. `paths-ignore: Reports/**`
+#                  is critical here: without it, the commit this workflow makes back into Reports/
+#                  would itself trigger another push run, forever.
+#   3. workflow_dispatch - lets you trigger a run manually from the Actions tab.
+on:
+  schedule:
+    - cron: '0 3 * * *' # 03:00 UTC = 08:30 IST, daily
+  push:
+    branches: [main]
+    paths:
+      - 'report-template.html'
+      - 'Instructions.md'
+      - 'scripts/**'
+      - '.github/workflows/generate-report.yml'
+    paths-ignore:
+      - 'Reports/**'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: generate-report
+  cancel-in-progress: false
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Generate report
+        run: python scripts/generate_report.py
+
+      - name: Commit and push new report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Reports/
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Auto-generate BCONHUB report [skip ci]"
+            git push
+          fi
