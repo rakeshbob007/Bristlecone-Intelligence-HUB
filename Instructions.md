@@ -1,16 +1,16 @@
 # BCONHUB Intelligence Report — Operating Instructions
 
-These instructions govern the n8n workflow that generates the **Bristlecone Intelligence HUB (BCONHUB)** report whenever a user sends a message in the n8n chat trigger. They are meant to be pasted into (or read by) the AI Agent / LLM node that does the research and writing.
+These instructions govern how the **Bristlecone Intelligence HUB (BCONHUB)** report gets generated. They are meant to be given to (or read by) whatever AI agent or automation process does the research and writing.
 
 ## 1. Purpose
 
-On every chat trigger, produce **one self-contained HTML report** summarizing what's happened with **Bristlecone** (and its parent, **Mahindra & Mahindra**) recently, so that "if an employee missed the last couple of months entirely, reading this report alone brings them fully up to speed." The report gathers a **2-month** window of official news so it always has real content, but the reader can narrow it down to the last 48 hours or 24 hours themselves using the built-in time-range filter — both jobs (broad gathering, narrow reading) are handled without regenerating the report.
+Each time the report is generated, produce **one self-contained HTML report** summarizing what's happened with **Bristlecone** (and its parent, **Mahindra & Mahindra**) recently, so that "if an employee missed the last couple of months entirely, reading this report alone brings them fully up to speed." The report gathers a **60-day** window of official news so it always has real content, but the reader can narrow it down to the last 48 hours or 24 hours themselves using the built-in time-range filter — both jobs (broad gathering, narrow reading) are handled without regenerating the report.
 
 ## 2. Time Window
 
-- **Gathering window** (what the agent searches for and includes) = `(now - 60 days)` to `now`, where `now` is the moment the chat message triggered the workflow. This is intentionally wide — Bristlecone's and Mahindra's official channels don't publish daily, so a strict 24–48 hour gathering window regularly comes back empty. 60 days reliably surfaces real, verifiable official news.
-- **Reading window** (what the reader sees) is the reader's own choice, made after generation, via the template's Time Range control: Last 24h / Last 48h / Last 2 Months (default). This works because every card also carries its own precise timestamp (`{{ITEM_DATETIME_ISO}}`, §6) — the template filters client-side, no regeneration needed.
-- Always state the exact 2-month gathering window in the report header (e.g. "Jul 13 – Sep 11, 2026").
+- **Gathering window** (what the agent searches for and includes) = `(now - 60 days)` to `now`, where `now` is the moment report generation is triggered. This is intentionally wide — Bristlecone's and Mahindra's official channels don't publish daily, so a strict 24–48 hour gathering window regularly comes back empty. 60 days reliably surfaces real, verifiable official news.
+- **Reading window** (what the reader sees) is the reader's own choice, made after generation, via the template's Time Range control: Last 24h / Last 48h / Last 60 Days (default). This works because every card also carries its own precise timestamp (`{{ITEM_DATETIME_ISO}}`, §6) — the template filters client-side, no regeneration needed.
+- Always state the exact 60-day gathering window in the report header (e.g. "Jul 13 – Sep 11, 2026").
 - Give every item its true, accurate publish date/time — do not round to "today" or otherwise misrepresent when something happened. The reader's 24h/48h filter depends entirely on this being accurate; a wrong timestamp silently breaks it for that item.
 - It is completely normal and expected for the Last 24h or Last 48h view to come up mostly or fully empty — that's honest, not a failure. Do not stretch dates or invent items to fill it.
 
@@ -79,8 +79,8 @@ Pick the single most important item across *all* categories (the one an employee
   <!-- CARD_TEMPLATE_END -->
   ```
   Duplicate this block once per news item in that section (fill placeholders each time, including `data-datetime`), then delete the `CARD_TEMPLATE_START/END` comment markers from the final output. Delete the whole block and use the `<!-- EMPTY_STATE ... -->` block instead if a section has nothing to report. Leave the `<div class="no-match" hidden>...</div>` line in each section exactly as-is — it is static scaffolding the page's filter script uses, not something to fill in or remove.
-- Do not add external `<script src>` or `<link>` CDN dependencies — the file must open standalone (double-click in a browser, or preview in Google Drive) with zero network calls. All CSS/JS is already inline in the template.
-- Keep the executive summary (`{{EXECUTIVE_SUMMARY}}`) to 2–3 sentences: the single most important thing, in plain language. It always describes the full 2-month gathering window regardless of the reader's filter selection (the template labels it as such) — if nothing at all is within the last 48/24 hours, say so plainly rather than implying otherwise.
+- Do not add external `<script src>` or `<link>` CDN dependencies — the file must open standalone (double-click in a browser) with zero network calls. All CSS/JS is already inline in the template.
+- Keep the executive summary (`{{EXECUTIVE_SUMMARY}}`) to 2–3 sentences: the single most important thing, in plain language. It always describes the full 60-day gathering window regardless of the reader's filter selection (the template labels it as such) — if nothing at all is within the last 48/24 hours, say so plainly rather than implying otherwise.
 
 ## 7. File Naming & Save Location
 
@@ -90,18 +90,9 @@ Pick the single most important item across *all* categories (the one an employee
   ```
   Example: `BCONHUB-Report_2026-09-11_143205.html`
 - `<YYYY-MM-DD>` = date the report was generated (trigger time), `<HHMMSS>` = 24-hour trigger timestamp (no colons — also illegal in filenames).
-- Save the generated file to the **`Reports`** subfolder of **`Bristlecone Intelligence HUB`** (same Google Drive folder this instructions file lives in).
+- Save the generated file to the **`Reports`** subfolder of **`Bristlecone Intelligence HUB`** (the same project folder this instructions file lives in).
 
-## 8. Suggested n8n Node Flow
-
-1. **Chat Trigger** (When chat message received).
-2. **Google Drive – Download File**: fetch `Instructions.md` and `report-template.html` from the `Bristlecone Intelligence HUB` Drive folder (or keep them cached/pinned in the workflow) — this keeps the workflow reusable without hardcoding the prompt/template in the node itself.
-3. **AI Agent / LLM node**: system prompt = contents of `Instructions.md`; give it a web search tool capable of `site:` -restricted queries (or a news/RSS/API tool) and explicitly instruct it to run one query per domain in §4 for the current 60-day window; input = template contents; instruct it to return only the final filled HTML (no markdown fences, no commentary).
-4. **Code/Set node**: compute the filename using the pattern in §7 from the current execution timestamp.
-5. **Google Drive – Upload File**: write the HTML output into `Bristlecone Intelligence HUB/Reports` with the computed filename.
-6. **Respond to chat**: reply to the user with the Drive file's shareable link (and/or the direct HTML content) — this is the "report URL" the user asked for.
-
-## 9. Quality Checklist (agent must self-verify before finishing)
+## 8. Quality Checklist (agent must self-verify before finishing)
 
 - [ ] Searched across every domain/handle listed in §4, not just the first source found.
 - [ ] Every news item has a working, official source link whose URL matches an approved domain/handle.

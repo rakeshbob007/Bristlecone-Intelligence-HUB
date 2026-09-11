@@ -56,10 +56,23 @@
       radial-gradient(760px 560px at 100% 8%, rgba(177,139,255,0.18), transparent 60%),
       radial-gradient(620px 480px at 45% 105%, rgba(255,92,157,0.14), transparent 60%),
       radial-gradient(520px 420px at 85% 70%, rgba(69,224,216,0.10), transparent 60%);
-    animation:glowShift 18s ease-in-out infinite;
+    animation:glowShift 22s ease-in-out infinite;
     transition:transform 0.2s ease-out;
   }
-  @keyframes glowShift{0%,100%{opacity:0.85;transform:translateY(0) scale(1);}50%{opacity:1;transform:translateY(-14px) scale(1.03);}}
+  @keyframes glowShift{
+    0%{opacity:0.85;transform:translate(0,0) scale(1) rotate(0deg);}
+    25%{opacity:1;transform:translate(18px,-14px) scale(1.04) rotate(1.2deg);}
+    50%{opacity:0.95;transform:translate(-10px,-22px) scale(1.07) rotate(-1deg);}
+    75%{opacity:1;transform:translate(12px,-8px) scale(1.03) rotate(0.6deg);}
+    100%{opacity:0.85;transform:translate(0,0) scale(1) rotate(0deg);}
+  }
+
+  .fx-sweep{
+    position:fixed;inset:-20%;z-index:-2;pointer-events:none;
+    background:conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(34,229,255,0.05) 60deg, transparent 140deg, rgba(177,139,255,0.05) 220deg, transparent 300deg, transparent 360deg);
+    animation:sweepRotate 40s linear infinite;
+  }
+  @keyframes sweepRotate{to{transform:rotate(360deg);}}
 
   .fx-stars{
     position:fixed;inset:0;z-index:-1;pointer-events:none;
@@ -73,8 +86,24 @@
       radial-gradient(1px 1px at 92% 85%, rgba(255,255,255,0.3), transparent);
     background-repeat:repeat;background-size:480px 480px;
     animation:twinkle 5s ease-in-out infinite;
+    transition:transform 0.2s ease-out;
   }
   @keyframes twinkle{0%,100%{opacity:0.5;}50%{opacity:1;}}
+
+  /* floating ember/particle layer */
+  .fx-particles{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;}
+  .fx-particles span{
+    position:absolute;bottom:-24px;left:var(--x);width:var(--sz);height:var(--sz);border-radius:50%;
+    background:var(--c);box-shadow:0 0 6px var(--c),0 0 12px var(--c);
+    opacity:0;animation:emberRise var(--d) linear infinite;animation-delay:var(--dl);
+  }
+  @keyframes emberRise{
+    0%{transform:translate(0,0);opacity:0;}
+    8%{opacity:0.85;}
+    50%{transform:translate(14px,-52vh);}
+    92%{opacity:0.5;}
+    100%{transform:translate(-10px,-108vh);opacity:0;}
+  }
 
   /* ================= layout ================= */
   .wrap{max-width:1080px;margin:0 auto;padding:0 20px 90px;position:relative;}
@@ -174,15 +203,17 @@
 
   /* ================= filter bar ================= */
   .filters{
-    display:flex;flex-wrap:wrap;gap:22px;align-items:flex-start;
     background:var(--panel);border:1px solid var(--border);border-radius:20px;
-    padding:20px 22px;margin:28px 0;backdrop-filter:blur(10px);
+    padding:22px 24px;margin:28px 0;backdrop-filter:blur(10px);
     box-shadow:0 1px 2px rgba(0,0,0,0.2), 0 10px 30px rgba(0,0,0,0.35);
     opacity:0;transform:translateY(14px);filter:blur(4px);animation:materialize 0.7s ease forwards;
   }
-  .filter-group{flex:1 1 240px;min-width:0;transition:opacity 0.3s ease, max-height 0.3s ease;}
+  .filters-top{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start;}
+  .filter-group{flex:1 1 220px;min-width:0;transition:opacity 0.3s ease, max-height 0.3s ease;}
   .filter-group.is-hidden{display:none;}
-  .filter-label{display:block;font-size:11px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;}
+  .filter-label{display:block;font-size:11px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px;}
+  .filter-categories{margin-top:20px;padding-top:20px;border-top:1px solid var(--border);}
+  .filter-categories .filter-label{display:flex;align-items:center;justify-content:space-between;}
 
   .segmented{position:relative;display:inline-flex;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:999px;padding:4px;gap:2px;max-width:100%;}
   .segmented-indicator{
@@ -201,39 +232,39 @@
   .seg-btn.active{color:#fff;}
   .seg-btn:active{transform:scale(0.94);}
 
-  .chip-row{display:flex;flex-wrap:wrap;gap:8px;}
+  .filter-label .total-badge{
+    font-size:10.5px;font-weight:700;letter-spacing:0.3px;text-transform:none;
+    color:var(--cyan);background:rgba(34,229,255,0.08);border:1px solid rgba(34,229,255,0.3);
+    padding:2px 9px;border-radius:999px;
+  }
+  .chip-row{display:flex;flex-wrap:wrap;gap:10px;}
   .cat-chip{
     --chip:var(--blue-ink); --chip-glow:var(--blue-glow); --chip-bd:var(--blue-bd);
-    border:1px solid var(--chip-bd);background:rgba(255,255,255,0.03);color:var(--chip);
+    position:relative;border:1px solid var(--chip-bd);background:rgba(255,255,255,0.03);color:var(--chip);
     padding:8px 14px;border-radius:999px;font-size:12.5px;font-weight:600;cursor:pointer;
     transition:background 0.25s ease, color 0.25s ease, opacity 0.25s ease, border-color 0.25s ease, transform 0.15s ease, box-shadow 0.25s ease;
     white-space:nowrap;
   }
+  .cat-chip .chip-count{font-weight:700;opacity:0.85;font-size:11.5px;}
   .cat-chip.active{background:var(--chip-glow);box-shadow:0 0 16px var(--chip-glow);animation:chipPop 0.35s ease;}
-  .cat-chip:not(.active){opacity:0.4;border-color:var(--border);color:var(--text-dim);background:rgba(255,255,255,0.02);}
+  .cat-chip.active::after{
+    content:"";position:absolute;left:50%;bottom:-7px;width:5px;height:5px;border-radius:50%;
+    background:var(--chip);box-shadow:0 0 8px var(--chip);transform:translateX(-50%);
+  }
+  .cat-chip:not(.active){opacity:0.72;}
+  .cat-chip:hover{opacity:1;transform:translateY(-1px);}
   .cat-chip:active{transform:scale(0.92);}
   @keyframes chipPop{0%{transform:scale(1);}45%{transform:scale(1.12);}100%{transform:scale(1);}}
 
-  /* ================= stats ================= */
-  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:12px;margin:30px 0;}
-  .stat{
-    background:var(--panel);border:1px solid var(--border);border-radius:18px;
-    padding:18px 10px;text-align:center;min-width:0;backdrop-filter:blur(8px);
-    box-shadow:0 1px 2px rgba(0,0,0,0.2);
-    opacity:0;transform:translateY(16px);filter:blur(4px);
-    animation:materialize 0.7s ease forwards;
-    transition:border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
-  }
-  .stat:hover{border-color:var(--border-strong);transform:translateY(-2px);box-shadow:0 10px 28px rgba(34,229,255,0.12);}
-  .stat .num{
-    display:block;font-size:clamp(18px,4vw,26px);font-weight:800;color:#fff;
-    letter-spacing:-0.02em;overflow-wrap:anywhere;word-break:break-word;line-height:1.1;
-    text-shadow:0 0 18px rgba(34,229,255,0.4);
-    transition:color 0.2s ease;
-  }
-  .stat .lbl{font-size:11px;color:var(--text-dim);margin-top:5px;letter-spacing:0.2px;}
-
   @keyframes materialize{to{opacity:1;transform:translateY(0);filter:blur(0);}}
+
+  /* nav-ping: brief confirmation glow on the section icon you just jumped to */
+  .icon.nav-ping{animation:iconPing 0.9s ease;}
+  @keyframes iconPing{
+    0%{box-shadow:0 0 0 0 rgba(34,229,255,0.55);}
+    70%{box-shadow:0 0 0 20px rgba(34,229,255,0);}
+    100%{box-shadow:0 0 0 0 rgba(34,229,255,0);}
+  }
 
   /* ================= summary ================= */
   .summary{
@@ -261,8 +292,8 @@
     display:grid;grid-template-rows:1fr;
     transition:grid-template-rows 0.5s cubic-bezier(.4,0,.2,1), opacity 0.4s ease, margin 0.4s ease;
     margin-bottom:52px;
+    scroll-margin-top:132px;
   }
-  section.block.collapsed{grid-template-rows:0fr;opacity:0;margin-bottom:0;pointer-events:none;}
   section.block > .block-inner{overflow:hidden;min-height:0;}
 
   .block-head{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
@@ -374,7 +405,22 @@
 
 <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
 <div class="fx-layer fx-glow" id="fxGlow"></div>
-<div class="fx-stars"></div>
+<div class="fx-sweep"></div>
+<div class="fx-stars" id="fxStars"></div>
+<div class="fx-particles" id="fxParticles">
+  <span style="--x:4%;--sz:3px;--d:18s;--dl:0s;--c:var(--cyan);"></span>
+  <span style="--x:12%;--sz:2px;--d:24s;--dl:2s;--c:var(--purple-ink);"></span>
+  <span style="--x:21%;--sz:2.5px;--d:20s;--dl:5s;--c:var(--pink-ink);"></span>
+  <span style="--x:33%;--sz:2px;--d:26s;--dl:1s;--c:var(--teal-ink);"></span>
+  <span style="--x:45%;--sz:3px;--d:22s;--dl:7s;--c:var(--cyan);"></span>
+  <span style="--x:58%;--sz:2px;--d:19s;--dl:3s;--c:var(--gold-ink);"></span>
+  <span style="--x:67%;--sz:2.5px;--d:25s;--dl:9s;--c:var(--purple-ink);"></span>
+  <span style="--x:76%;--sz:2px;--d:21s;--dl:4s;--c:var(--pink-ink);"></span>
+  <span style="--x:84%;--sz:3px;--d:27s;--dl:6s;--c:var(--teal-ink);"></span>
+  <span style="--x:91%;--sz:2px;--d:23s;--dl:8s;--c:var(--cyan);"></span>
+  <span style="--x:98%;--sz:2.5px;--d:20s;--dl:10s;--c:var(--coral-ink);"></span>
+  <span style="--x:52%;--sz:2px;--d:29s;--dl:12s;--c:var(--green-ink);"></span>
+</div>
 
 <header>
   <div class="header-inner">
@@ -401,7 +447,7 @@
     <span class="eyebrow"><span class="dot"></span> Org Intelligence Briefing</span>
     <h1>What happened while you were away</h1>
     <div class="window">Full coverage window: <strong>{{WINDOW_START}}</strong> &rarr; <strong>{{WINDOW_END}}</strong>
-      <span class="hint">Showing the last 2 months by default — use the Time Range filter below to narrow to the last 24 or 48 hours.</span>
+      <span class="hint">Showing the last 60 days by default — use the Time Range filter below to narrow to the last 24 or 48 hours.</span>
     </div>
   </div>
 
@@ -422,59 +468,49 @@
   </div>
 
   <div class="filters">
-    <div class="filter-group">
-      <span class="filter-label">View</span>
-      <div class="segmented" id="viewToggle">
-        <span class="segmented-indicator"></span>
-        <button class="seg-btn active" data-value="category" type="button">By Category</button>
-        <button class="seg-btn" data-value="feed" type="button">News Feed</button>
+    <div class="filters-top">
+      <div class="filter-group">
+        <span class="filter-label">View</span>
+        <div class="segmented" id="viewToggle">
+          <span class="segmented-indicator"></span>
+          <button class="seg-btn active" data-value="category" type="button">By Category</button>
+          <button class="seg-btn" data-value="feed" type="button">News Feed</button>
+        </div>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Time range</span>
+        <div class="segmented" id="windowToggle">
+          <span class="segmented-indicator"></span>
+          <button class="seg-btn" data-value="24" type="button">Last 24h</button>
+          <button class="seg-btn" data-value="48" type="button">Last 48h</button>
+          <button class="seg-btn active" data-value="1440" type="button">Last 60 Days</button>
+        </div>
       </div>
     </div>
-    <div class="filter-group">
-      <span class="filter-label">Time range</span>
-      <div class="segmented" id="windowToggle">
-        <span class="segmented-indicator"></span>
-        <button class="seg-btn" data-value="24" type="button">Last 24h</button>
-        <button class="seg-btn" data-value="48" type="button">Last 48h</button>
-        <button class="seg-btn active" data-value="1440" type="button">Last 2 Months</button>
+    <div class="filter-group filter-categories" id="categoryFilterGroup">
+      <span class="filter-label">Categories <span class="total-badge" id="totalBadge">{{TOTAL_UPDATES}} total</span></span>
+      <div class="chip-row" role="group" aria-label="Categories — click to jump to that section">
+        <button class="cat-chip active" data-cat="achievements" type="button" style="--chip:var(--gold-ink);--chip-glow:var(--gold-glow);--chip-bd:var(--gold-bd);">🏆 Achievements <span class="chip-count">({{ACHIEVEMENTS_COUNT}})</span></button>
+        <button class="cat-chip" data-cat="offers" type="button" style="--chip:var(--orange-ink);--chip-glow:var(--orange-glow);--chip-bd:var(--orange-bd);">🚘 Offers <span class="chip-count">({{OFFERS_COUNT}})</span></button>
+        <button class="cat-chip" data-cat="announcements" type="button" style="--chip:var(--blue-ink);--chip-glow:var(--blue-glow);--chip-bd:var(--blue-bd);">📢 Announcements <span class="chip-count">({{ANNOUNCEMENTS_COUNT}})</span></button>
+        <button class="cat-chip" data-cat="financial" type="button" style="--chip:var(--teal-ink);--chip-glow:var(--teal-glow);--chip-bd:var(--teal-bd);">📈 Financial <span class="chip-count">({{FINANCIAL_COUNT}})</span></button>
+        <button class="cat-chip" data-cat="events" type="button" style="--chip:var(--green-ink);--chip-glow:var(--green-glow);--chip-bd:var(--green-bd);">🎉 Events &amp; CSR <span class="chip-count">({{EVENTS_COUNT}})</span></button>
+        <button class="cat-chip" data-cat="industry" type="button" style="--chip:var(--purple-ink);--chip-glow:var(--purple-glow);--chip-bd:var(--purple-bd);">🌍 Industry <span class="chip-count">({{INDUSTRY_COUNT}})</span></button>
+        <button class="cat-chip" data-cat="people" type="button" style="--chip:var(--coral-ink);--chip-glow:var(--coral-glow);--chip-bd:var(--coral-bd);">🧑‍💼 People <span class="chip-count">({{PEOPLE_COUNT}})</span></button>
+        <button class="cat-chip" data-cat="trending" type="button" style="--chip:var(--pink-ink);--chip-glow:var(--pink-glow);--chip-bd:var(--pink-bd);">🔥 Trending <span class="chip-count">({{TRENDING_COUNT}})</span></button>
       </div>
     </div>
-    <div class="filter-group" id="categoryFilterGroup">
-      <span class="filter-label">Categories</span>
-      <div class="chip-row" role="group" aria-label="Categories">
-        <button class="cat-chip active" data-cat="achievements" type="button" style="--chip:var(--gold-ink);--chip-glow:var(--gold-glow);--chip-bd:var(--gold-bd);">🏆 Achievements</button>
-        <button class="cat-chip active" data-cat="offers" type="button" style="--chip:var(--orange-ink);--chip-glow:var(--orange-glow);--chip-bd:var(--orange-bd);">🚘 Offers</button>
-        <button class="cat-chip active" data-cat="announcements" type="button" style="--chip:var(--blue-ink);--chip-glow:var(--blue-glow);--chip-bd:var(--blue-bd);">📢 Announcements</button>
-        <button class="cat-chip active" data-cat="financial" type="button" style="--chip:var(--teal-ink);--chip-glow:var(--teal-glow);--chip-bd:var(--teal-bd);">📈 Financial</button>
-        <button class="cat-chip active" data-cat="events" type="button" style="--chip:var(--green-ink);--chip-glow:var(--green-glow);--chip-bd:var(--green-bd);">🎉 Events &amp; CSR</button>
-        <button class="cat-chip active" data-cat="industry" type="button" style="--chip:var(--purple-ink);--chip-glow:var(--purple-glow);--chip-bd:var(--purple-bd);">🌍 Industry</button>
-        <button class="cat-chip active" data-cat="people" type="button" style="--chip:var(--coral-ink);--chip-glow:var(--coral-glow);--chip-bd:var(--coral-bd);">🧑‍💼 People</button>
-        <button class="cat-chip active" data-cat="trending" type="button" style="--chip:var(--pink-ink);--chip-glow:var(--pink-glow);--chip-bd:var(--pink-bd);">🔥 Trending</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="stats">
-    <div class="stat" style="animation-delay:0.02s"><div class="num stat-total">{{TOTAL_UPDATES}}</div><div class="lbl">Total</div></div>
-    <div class="stat" style="animation-delay:0.06s"><div class="num stat-achievements">{{ACHIEVEMENTS_COUNT}}</div><div class="lbl">Achievements</div></div>
-    <div class="stat" style="animation-delay:0.10s"><div class="num stat-offers">{{OFFERS_COUNT}}</div><div class="lbl">Offers</div></div>
-    <div class="stat" style="animation-delay:0.14s"><div class="num stat-announcements">{{ANNOUNCEMENTS_COUNT}}</div><div class="lbl">Announcements</div></div>
-    <div class="stat" style="animation-delay:0.18s"><div class="num stat-financial">{{FINANCIAL_COUNT}}</div><div class="lbl">Financial</div></div>
-    <div class="stat" style="animation-delay:0.22s"><div class="num stat-events">{{EVENTS_COUNT}}</div><div class="lbl">Events &amp; CSR</div></div>
-    <div class="stat" style="animation-delay:0.26s"><div class="num stat-industry">{{INDUSTRY_COUNT}}</div><div class="lbl">Industry</div></div>
-    <div class="stat" style="animation-delay:0.30s"><div class="num stat-people">{{PEOPLE_COUNT}}</div><div class="lbl">People</div></div>
-    <div class="stat" style="animation-delay:0.34s"><div class="num stat-trending">{{TRENDING_COUNT}}</div><div class="lbl">Trending</div></div>
   </div>
 
   <div class="summary">
-    <div class="lbl">Executive Summary<span class="lbl-note">(full 2-month window)</span></div>
+    <div class="lbl">Executive Summary<span class="lbl-note">(full 60-day window)</span></div>
     <p>{{EXECUTIVE_SUMMARY}}</p>
   </div>
 
   <div id="viewCategory">
 
     <!-- ============ SECTION: ACHIEVEMENTS ============ -->
-    <section class="block" data-category="achievements"><div class="block-inner">
+    <section class="block" id="section-achievements" data-category="achievements"><div class="block-inner">
       <div class="block-head">
         <div class="icon">🏆</div>
         <h2>Bristlecone Achievements</h2>
@@ -505,7 +541,7 @@
     </div></section>
 
     <!-- ============ SECTION: EMPLOYEE OFFERS & BENEFITS ============ -->
-    <section class="block" data-category="offers"><div class="block-inner">
+    <section class="block" id="section-offers" data-category="offers"><div class="block-inner">
       <div class="block-head">
         <div class="icon">🚘</div>
         <h2>Employee Offers &amp; Benefits</h2>
@@ -536,7 +572,7 @@
     </div></section>
 
     <!-- ============ SECTION: OFFICIAL ANNOUNCEMENTS ============ -->
-    <section class="block" data-category="announcements"><div class="block-inner">
+    <section class="block" id="section-announcements" data-category="announcements"><div class="block-inner">
       <div class="block-head">
         <div class="icon">📢</div>
         <h2>Official Announcements</h2>
@@ -567,7 +603,7 @@
     </div></section>
 
     <!-- ============ SECTION: BUSINESS & FINANCIAL ============ -->
-    <section class="block" data-category="financial"><div class="block-inner">
+    <section class="block" id="section-financial" data-category="financial"><div class="block-inner">
       <div class="block-head">
         <div class="icon">📈</div>
         <h2>Business &amp; Financial</h2>
@@ -598,7 +634,7 @@
     </div></section>
 
     <!-- ============ SECTION: EVENTS & CSR ============ -->
-    <section class="block" data-category="events"><div class="block-inner">
+    <section class="block" id="section-events" data-category="events"><div class="block-inner">
       <div class="block-head">
         <div class="icon">🎉</div>
         <h2>Events &amp; CSR</h2>
@@ -629,7 +665,7 @@
     </div></section>
 
     <!-- ============ SECTION: INDUSTRY & INNOVATION ============ -->
-    <section class="block" data-category="industry"><div class="block-inner">
+    <section class="block" id="section-industry" data-category="industry"><div class="block-inner">
       <div class="block-head">
         <div class="icon">🌍</div>
         <h2>Industry &amp; Innovation</h2>
@@ -660,7 +696,7 @@
     </div></section>
 
     <!-- ============ SECTION: PEOPLE & LEADERSHIP ============ -->
-    <section class="block" data-category="people"><div class="block-inner">
+    <section class="block" id="section-people" data-category="people"><div class="block-inner">
       <div class="block-head">
         <div class="icon">🧑‍💼</div>
         <h2>People &amp; Leadership</h2>
@@ -691,7 +727,7 @@
     </div></section>
 
     <!-- ============ SECTION: TRENDING ============ -->
-    <section class="block" data-category="trending"><div class="block-inner">
+    <section class="block" id="section-trending" data-category="trending"><div class="block-inner">
       <div class="block-head">
         <div class="icon">🔥</div>
         <h2>Trending in the Organization</h2>
@@ -754,6 +790,8 @@
     document.getElementById('progressBar').style.width = pct + '%';
     var glow = document.getElementById('fxGlow');
     if (glow) glow.style.transform = 'translateY(' + (scrollTop * 0.06) + 'px)';
+    var stars = document.getElementById('fxStars');
+    if (stars) stars.style.transform = 'translateY(' + (scrollTop * -0.03) + 'px)';
   }
   document.addEventListener('scroll', updateProgress, {passive:true});
 
@@ -780,19 +818,13 @@
     window.addEventListener('resize', function(){ move(root.querySelector('.seg-btn.active')); });
   }
 
-  function animateNumber(el, target){
-    if (!el) return;
-    var current = parseInt(el.textContent.replace(/[^0-9]/g,''),10);
-    if (isNaN(current)) current = 0;
-    if (current === target) { el.textContent = target; return; }
-    var step = (target - current) / 12;
-    var frame = 0;
-    var timer = setInterval(function(){
-      frame++;
-      current += step;
-      if (frame >= 12){ current = target; clearInterval(timer); }
-      el.textContent = Math.round(current);
-    }, 20);
+  function setChipCount(cat, count){
+    var el = document.querySelector('.cat-chip[data-cat="' + cat + '"] .chip-count');
+    if (el) el.textContent = '(' + count + ')';
+  }
+  function setTotalBadge(count){
+    var el = document.getElementById('totalBadge');
+    if (el) el.textContent = count + ' total';
   }
 
   function applyWindowFilter(){
@@ -819,11 +851,10 @@
         countEl.textContent = visibleCards.length + ' update(s)';
       }
       var cat = section.dataset.category;
-      var numEl = document.querySelector('.stat-' + cat);
-      if (numEl) animateNumber(numEl, visibleCards.length);
+      setChipCount(cat, visibleCards.length);
       total += visibleCards.length;
     });
-    animateNumber(document.querySelector('.stat-total'), total);
+    setTotalBadge(total);
     buildFeed();
   }
 
@@ -863,17 +894,46 @@
     if (value === 'feed') buildFeed();
   });
 
-  document.querySelectorAll('.cat-chip').forEach(function(chip){
+  var navChips = document.querySelectorAll('.cat-chip');
+
+  /* clicking a category chip jumps to that section (nav-tab behavior) */
+  navChips.forEach(function(chip){
     chip.addEventListener('click', function(){
-      chip.classList.toggle('active');
-      var section = document.querySelector('#viewCategory section.block[data-category="' + chip.dataset.cat + '"]');
+      var section = document.getElementById('section-' + chip.dataset.cat);
       if (!section) return;
-      section.classList.toggle('collapsed', !chip.classList.contains('active'));
+      if (document.body.classList.contains('mode-feed')){
+        var catBtn = document.querySelector('#viewToggle .seg-btn[data-value="category"]');
+        if (catBtn) catBtn.click();
+      }
+      navChips.forEach(function(c){ c.classList.remove('active'); });
+      chip.classList.add('active');
+      section.scrollIntoView({behavior:'smooth', block:'start'});
+      var icon = section.querySelector('.icon');
+      if (icon){
+        icon.classList.remove('nav-ping');
+        void icon.offsetWidth;
+        icon.classList.add('nav-ping');
+        setTimeout(function(){ icon.classList.remove('nav-ping'); }, 900);
+      }
     });
   });
 
+  /* scroll-spy: keep the chip for whichever section is currently in view highlighted */
+  var navSections = document.querySelectorAll('#viewCategory section.block');
+  if ('IntersectionObserver' in window && navSections.length){
+    var spy = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if (entry.isIntersecting){
+          var cat = entry.target.dataset.category;
+          navChips.forEach(function(c){ c.classList.toggle('active', c.dataset.cat === cat); });
+        }
+      });
+    }, {rootMargin:'-35% 0px -55% 0px', threshold:0});
+    navSections.forEach(function(s){ spy.observe(s); });
+  }
+
   /* reveal-on-scroll */
-  var reveals = document.querySelectorAll('.card, .empty, .stat, .summary, .filters, .top-story');
+  var reveals = document.querySelectorAll('.card, .empty, .summary, .filters, .top-story');
   if ('IntersectionObserver' in window){
     var io = new IntersectionObserver(function(entries){
       entries.forEach(function(entry){
