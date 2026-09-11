@@ -69,8 +69,10 @@ nothing else that will catch a regression. When you change the template:
 ## Automated generation (`scripts/generate_report.py` + GitHub Actions)
 
 `.github/workflows/generate-report.yml` runs the script daily (cron) and on any push that touches
-`report-template.html`, `Instructions.md`, or `scripts/**` (the `push` trigger uses `paths-ignore: Reports/**`
-so the workflow's own commit into `Reports/` never re-triggers itself — don't remove that ignore rule).
+`report-template.html`, `Instructions.md`, or `scripts/**`. The `push` trigger's `paths:` is an allowlist that
+deliberately excludes `Reports/**` (GitHub Actions rejects combining `paths` with `paths-ignore` on one
+trigger, so exclusion here just means "don't list it") — that's what stops the workflow's own commit into
+`Reports/` from re-triggering itself. Don't add `Reports/**` to that `paths:` list.
 
 This script is a deliberately different, narrower path than the manual/AI-assisted flow described in
 `Instructions.md`:
