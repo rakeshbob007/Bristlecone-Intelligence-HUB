@@ -77,20 +77,44 @@ trigger, so exclusion here just means "don't list it") — that's what stops the
 This script is a deliberately different, narrower path than the manual/AI-assisted flow described in
 `Instructions.md`:
 
-- **No LLM, no API key, $0 cost.** It scrapes `mahindra.com/newsroom/press-release` directly with `requests` +
-  `BeautifulSoup`, categorizes items with keyword rules (`KEYWORD_RULES` / `INDUSTRY_HINTS`), and fills
+- **No LLM, no API key, $0 cost.** It scrapes four sources directly with `requests` + `BeautifulSoup`,
+  categorizes every item with keyword rules (`KEYWORD_RULES` / `INDUSTRY_HINTS`), and fills
   `report-template.html` the same way a human/AI run would — same placeholder contract, same
   `CARD_TEMPLATE_START/END` duplication logic, reimplemented with regex in `replace_section()`.
-- **That source paginates one item per page** (`?page=0`, `?page=1`, …, newest first) — not what it looks like
-  when you browse it in a real browser, where a "load more" / infinite-scroll interaction has already pulled in
-  extra items client-side. `fetch_mahindra_items()` walks pages until it hits an item older than the 60-day
-  window, or a safety cap (`max_pages`). If you ever change `SOURCE_URL`, re-derive the pagination behavior
-  first — don't assume a single `requests.get()` returns the full list.
-- **Coverage is intentionally narrower than a manual run**: only Mahindra Group's corporate newsroom is
-  scraped. Bristlecone-specific achievements/events and employee-specific offers are *not* covered — those
-  categories will legitimately show empty states from the automated run even when a manually-triggered,
-  AI-assisted report (asking Claude directly, per the normal `Instructions.md` flow) can find something by
-  searching more broadly. This is by design, not a bug to "fix" by loosening the sourcing rules.
+- **Four scraped sources, one fetcher function each** (see the `fetchers` list in `main()`), each confirmed
+  server-rendered (no headless browser needed) and genuinely editorial (not placeholder/test content):
+  - `fetch_mahindra_items()` — `mahindra.com/news-room/press-release`. Paginates **one item per page**
+    (`?page=0`, `?page=1`, …, newest first) — not what it looks like in a real browser, where a "load more"
+    interaction has already pulled in extra items client-side. Walks pages until an item falls outside the
+    60-day window, or a safety cap (`max_pages`).
+  - `fetch_mahindra_finance_items()` — `mahindrafinance.com/media/press-release`. Server-rendered `.pressInfo`
+    blocks (`span` date in "28th January 2026" ordinal-suffix format, `h3` title, a `.pdf` link used directly
+    as the source URL — there is no separate article page). No pagination is scraped; only what's on the base
+    URL. Note `/media` alone (no further path) 403s — the exact `/media/press-release` path is required.
+  - `fetch_bristlecone_category()` — reused for both `bristlecone.com/category/in-the-news/` and
+    `/category/press-releases/`. Standard WordPress archive: `article` elements, title+link in
+    `.post-header h3.title a`, the date as **plain text** (no machine-readable attribute) in the first
+    `<span>` of `.post-header` ("Month D, YYYY"), real `/page/N/` pagination.
+  - If you ever change any of these source URLs, re-derive the pagination/rendering behavior first — don't
+    assume a single `requests.get()` returns the full list, or that a real browser's DOM matches the raw
+    server response.
+- **Two known Mahindra Group domains are deliberately NOT scraped**, both confirmed by hand before deciding
+  against them — don't re-add them without re-checking whether the underlying problem was fixed:
+  - `auto.mahindra.com/news` — reachable and even server-rendered, but its News Room widget currently serves
+    placeholder content ("News Room Blog 9", a generic "AUTOCAR INDIA" byline, stale 2023-24 dates) regardless
+    of the `pageNo`/`serviceName` query params. Scraping it would mean publishing fake news under a real
+    Mahindra Auto byline — a direct violation of the "no fabricated content" sourcing rule.
+  - `mahindrarise.com` — returns a "Non-compliant action" bot-block page to a plain HTTP client; there's no
+    free way to get past it without a paid/headless-browser proxy service.
+- **Every item now carries its own `source_name`** (`"Mahindra Group Newsroom"` / `"Mahindra Finance"` /
+  `"Bristlecone"`) instead of one global constant — `build_card()`, the Top Story fields, and
+  `EXECUTIVE_SUMMARY` all read it per-item, so the "Source: X ↗" footer on each card is always accurate even
+  though items now come from four different domains.
+- Coverage is still narrower than a manual run in one respect: Bristlecone's own site has no scrapable listing
+  for employee-specific offers/benefits (that content doesn't live in a dated news feed), so the **Offers**
+  category will still legitimately show an empty state from the automated run more often than a
+  manually-triggered, AI-assisted report that can search more broadly. This is by design, not a bug to "fix"
+  by loosening the sourcing rules.
 - If `report-template.html`'s section markup changes (e.g. the `CARD_TEMPLATE_START/END`/`EMPTY_STATE`/
   `no-match` structure), `replace_section()`'s regex will need matching updates — it raises a clear
   `RuntimeError` naming the category it couldn't find, rather than silently producing a broken report.
