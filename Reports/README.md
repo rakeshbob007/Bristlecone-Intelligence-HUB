@@ -1,6 +1,6 @@
 # Reports
 
-Auto-generated BCONHUB reports land here, one per chat trigger.
+Auto-generated BCONHUB reports land here, one per report run.
 
 **Naming pattern:** `BCONHUB-Report_<YYYY-MM-DD>_<HHMMSS>.html`
 Example: `BCONHUB-Report_2026-09-11_143205.html`
