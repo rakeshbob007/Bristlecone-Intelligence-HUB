@@ -3,9 +3,11 @@ name: Generate BCONHUB Report
 # Two triggers:
 #   1. schedule  - runs every day so the report never goes stale.
 #   2. push      - runs whenever the template or the generator script changes, so you get a
-#                  fresh report reflecting the new design/logic right away. `paths-ignore: Reports/**`
-#                  is critical here: without it, the commit this workflow makes back into Reports/
-#                  would itself trigger another push run, forever.
+#                  fresh report reflecting the new design/logic right away. `paths` is an allowlist
+#                  (GitHub Actions rejects combining `paths` with `paths-ignore` on one trigger), and
+#                  `Reports/**` is deliberately NOT in it: a commit that only touches Reports/ (i.e.
+#                  this workflow's own commit) won't match any of these paths, so it can't trigger
+#                  another run of itself.
 #   3. workflow_dispatch - lets you trigger a run manually from the Actions tab.
 on:
   schedule:
@@ -17,8 +19,6 @@ on:
       - 'Instructions.md'
       - 'scripts/**'
       - '.github/workflows/generate-report.yml'
-    paths-ignore:
-      - 'Reports/**'
   workflow_dispatch: {}
 
 permissions:
