@@ -25,6 +25,10 @@ result into `Reports/` as a standalone HTML file for employees to read.
   workflow. See "Automated generation" below.
 - **`.github/workflows/generate-report.yml`** — the CI/CD workflow that runs the script daily and on relevant
   pushes, then commits the result into `Reports/`.
+- **`bot/telegram-worker.js`** — a Cloudflare Worker that lets anyone request the latest report on demand via
+  a Telegram bot, independent of the daily schedule. See "On-demand delivery" below. This file is the source
+  of truth for what's deployed, but deploying a change means manually pasting it into the Cloudflare dashboard
+  (Workers & Pages → bconhub-bot → Edit code) — there is no CI/CD link between this repo and the Worker.
 
 ## There is no build/test/lint tooling
 
@@ -118,6 +122,52 @@ This script is a deliberately different, narrower path than the manual/AI-assist
 - If `report-template.html`'s section markup changes (e.g. the `CARD_TEMPLATE_START/END`/`EMPTY_STATE`/
   `no-match` structure), `replace_section()`'s regex will need matching updates — it raises a clear
   `RuntimeError` naming the category it couldn't find, rather than silently producing a broken report.
+
+## On-demand delivery (`bot/telegram-worker.js` + Cloudflare Worker)
+
+A Telegram bot (`@BCONREPORTBOT`) lets anyone request the latest report instantly, independent of the daily
+schedule — send it `/latest` or `/report` and it replies with the newest file from `Reports/`. Runs entirely
+on Cloudflare Workers' free tier: event-driven (a webhook, not polling), so there's no cron-reliability
+concern like the GitHub Actions schedule has.
+
+- **Three secrets configured directly in the Cloudflare dashboard** (Workers & Pages → bconhub-bot → Settings
+  → Variables and Secrets) — none of these live in this repo:
+  - `TELEGRAM_BOT_TOKEN` — from @BotFather.
+  - `WEBHOOK_SECRET` — an arbitrary random string; Telegram echoes it back in a header
+    (`X-Telegram-Bot-Api-Secret-Token`) on every webhook call, which is how the Worker verifies a request
+    genuinely came from Telegram and not some random POST to its public URL.
+  - `GITHUB_TOKEN` — a fine-grained, read-only, public-repo-scoped GitHub personal access token (no
+    expiration). Needed because unauthenticated GitHub API calls are capped at 60/hour, and Cloudflare
+    Workers share egress IPs across many customers worldwide — that shared-IP limit gets exhausted in
+    practice, not just in theory. With this token the effective limit is 5,000/hour. The header is added
+    conditionally (`if (env.GITHUB_TOKEN)`), so the code doesn't hard-fail if it's ever removed.
+- **Two built-in diagnostic routes**, both plain `GET` (safe to open in any browser, no payload needed):
+  - `/whoami` — calls Telegram's `getMe` with the stored token and returns the raw response. First thing to
+    check if the bot goes silent — confirms the token itself is valid without ever exposing it.
+  - `/setup` — (re-)registers this Worker's own URL as the bot's webhook. Safe to call repeatedly; Telegram
+    just reports `"Webhook is already set"` if nothing changed. Necessary once after every fresh deploy of a
+    brand-new Worker, and again if the Worker is ever redeployed to a different URL.
+- **The file is uploaded to Telegram directly — never passed as a URL.** An earlier version passed
+  `document: <raw.githubusercontent.com URL>` in the `sendDocument` call and let Telegram fetch it
+  server-side; that failed intermittently with `"Bad Request: failed to get HTTP URL content"` — GitHub's raw
+  CDN doesn't reliably serve Telegram's own fetcher. The fix: the Worker downloads the file itself
+  (`fetch(rawUrl)` → `arrayBuffer()`), then re-uploads those bytes to Telegram as `multipart/form-data`
+  (`FormData` + `Blob`). Slightly more Worker CPU time, but categorically more reliable — don't revert to the
+  URL-based approach.
+- **Every Telegram API call checks `data.ok` and returns/logs the real error** (`sendMessage`, `sendDocument`)
+  instead of firing-and-forgetting — if a user reports "nothing happened" again, the bot should now be
+  telling them why in-chat; check Cloudflare's Observability → Invocations tab for `console.error` output if
+  not.
+- **Deploying a change is manual and easy to forget**: edit `bot/telegram-worker.js` in this repo, but the
+  live behavior doesn't change until you also paste the updated code into the Cloudflare dashboard's editor
+  and click **Save and deploy**. Keep both in sync by hand.
+- **Known friction points worth knowing before touching this again**:
+  - Cloudflare's code editor is a Monaco instance inside a same-origin `<iframe>` — clicking it doesn't always
+    focus it first try. Verify via `document.activeElement.tagName === "IFRAME"` before doing anything
+    keyboard-driven (`Ctrl+A` etc.), or `Ctrl+A` can select the whole outer page instead of just the code.
+  - `api.telegram.org` may be blocked outright on a restrictive corporate network (categorized as
+    "Chat, IM & other communication" by some IT security policies) — this is why `/setup` calls Telegram
+    *from the Worker's own network* rather than requiring a direct browser call to Telegram's API.
 
 ## Known gotcha: PowerShell text encoding will corrupt this file
 
